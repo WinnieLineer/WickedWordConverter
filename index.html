@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>換句話說轉換器</title>
+    <style>
+        /* 設置微軟正黑體 */
+        @font-face {
+            font-family: 'Microsoft JhengHei';
+            src: local('Microsoft JhengHei'), local('微軟正黑體');
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #e6f0fa, #d6e6ff); /* 淺藍背景 */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 背景科技元素 */
+        .background-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .science-element {
+            position: absolute;
+            font-size: 60px;
+            opacity: 0.2;
+            color: #74b9ff; /* 統一淺藍色 */
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .atom { top: 10%; left: 15%; }
+        .dna { top: 70%; left: 20%; }
+        .flask { top: 30%; left: 75%; }
+        .astronaut { top: 60%; left: 80%; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(15deg); }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.5);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            width: 600px;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #333;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::before {
+            content: "🧬";
+            position: absolute;
+            top: -40px;
+            left: -20px;
+            font-size: 50px;
+            color: #74b9ff;
+            animation: spin 8s infinite linear;
+        }
+
+        h1::after {
+            content: "🧪";
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            font-size: 40px;
+            color: #74b9ff;
+            animation: spin 6s infinite linear reverse;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: none; /* 移除框線 */
+            background: rgba(255, 255, 255, 0.7);
+            color: #333;
+            resize: none;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* 用陰影代替框線 */
+        }
+
+        textarea:focus {
+            box-shadow: 0 4px 15px rgba(85, 239, 196, 0.5); /* 聚焦時加強陰影 */
+            outline: none;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            background: #74b9ff;
+            border: none; /* 移除框線 */
+            border-radius: 10px;
+            cursor: pointer;
+            color: #fff;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            background: #55efc4;
+            box-shadow: 0 10px 25px rgba(85, 239, 196, 0.6);
+        }
+
+        #output {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #333;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* 用陰影代替框線 */
+            border: none; /* 移除框線 */
+            display: none;
+            animation: popIn 0.5s ease-in;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="science-element atom">⚛️</div>
+        <div class="science-element dna">🧬</div>
+        <div class="science-element flask">🧪</div>
+        <div class="science-element astronaut">👩‍🚀</div>
+    </div>
+    <div class="container">
+        <h1>話中話直譯器</h1>
+        <textarea id="input" placeholder="輸入一句話，例如：還請大家多多配合。"></textarea>
+        <button onclick="convertSentence()">轉換</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyA9OEx3T2q0ahU88aPyTE8ebquRm2FSxvg'; // 您的 API Key
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+        async function convertSentence() {
+            const input = document.getElementById('input').value.trim();
+            const outputDiv = document.getElementById('output');
+
+            if (!input) {
+                outputDiv.textContent = "請輸入一句話！";
+                outputDiv.style.display = "block";
+                return;
+            }
+
+            // 構造提示，要求轉換成禮貌且委婉的語句
+            const prompt = {
+                contents: [{
+                    parts: [{
+                        text: `你是一個話中話直譯器，能將原本句子轉換成這句子真正想表達的腹黑想法，例如：'希望你能夠共同創造安靜的空間，感謝你的努力' 轉換成 '你他媽有夠吵欸'。請直接提供轉換後的句子一句就好，不要多餘解釋。要翻譯的句子:'${input}'`
+                    }]
+                }]
+            };
+
+            try {
+                // 調用 Google Generative Language API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(prompt)
+                });
+
+                if (!response.ok) {
+                    throw new Error('API 請求失敗');
+                }
+
+                const data = await response.json();
+                const result = data.candidates[0].content.parts[0].text;
+
+                // 逐字顯示動畫
+                outputDiv.textContent = "";
+                outputDiv.style.display = "block";
+                let i = 0;
+                const typeInterval = setInterval(() => {
+                    if (i < result.length) {
+                        outputDiv.textContent += result[i];
+                        i++;
+                    } else {
+                        clearInterval(typeInterval);
+                    }
+                }, 40);
+            } catch (error) {
+                outputDiv.textContent = "轉換失敗，請檢查 API Key 或網絡！";
+                outputDiv.style.display = "block";
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
